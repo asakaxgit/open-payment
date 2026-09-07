@@ -1,0 +1,62 @@
+{
+  "name": "open-payment",
+  "version": "0.1.0",
+  "description": "Open payment provider port for SaaS billing (multi-PSP adapters)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "payment",
+    "billing",
+    "stripe",
+    "paddle",
+    "lemon-squeezy",
+    "polar",
+    "chargebee",
+    "saas",
+    "hexagonal"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/asakaxgit/open-payment.git"
+  },
+  "bugs": {
+    "url": "https://github.com/asakaxgit/open-payment/issues"
+  },
+  "homepage": "https://github.com/asakaxgit/open-payment#readme",
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "stripe": ">=14"
+  },
+  "peerDependenciesMeta": {
+    "stripe": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4",
+    "@types/node": "^22.13.10",
+    "stripe": "^22.6.1"
+  }
+}
