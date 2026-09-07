@@ -55,6 +55,13 @@ STRIPE_WEBHOOK_SECRET=
 
 Plan ↔ price IDs are configured via `configurePriceCatalog()` (preferred) or
 env vars of the form `{PROVIDER}_PRICE_{PLAN_KEY}` / provider-specific prefixes.
+Both directions work with either method: webhook parsing maps a provider price
+id back to your plan key.
+
+Env-derived keys are normalized, since the env name uppercases the key and
+collapses non-alphanumerics — a plan key of `pro-plus` becomes
+`STRIPE_PRICE_PRO_PLUS` and reverse-resolves as `pro_plus`. Use
+`configurePriceCatalog()` when you need your exact key spelling back.
 
 ## Supported providers (v0.1)
 

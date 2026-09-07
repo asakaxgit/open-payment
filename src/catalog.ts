@@ -57,16 +57,32 @@ export function getProviderPriceId(
   return value && value.length > 0 ? value : undefined;
 }
 
+/**
+ * Plan keys discoverable from `{PREFIX}{PLAN_KEY}` env vars.
+ *
+ * `planKeyToEnvSuffix` is lossy (it uppercases and collapses non-alphanumerics),
+ * so the recovered key is a normalized lowercase form: an app key of `pro-plus`
+ * is written as `..._PRO_PLUS` and comes back as `pro_plus`. Apps needing their
+ * exact spelling should use `configurePriceCatalog`.
+ */
+function envPlanKeys(provider: PaymentProviderId): string[] {
+  const prefix = DEFAULT_ENV_PREFIX[provider];
+  const keys: string[] = [];
+  for (const [name, value] of Object.entries(process.env)) {
+    if (!value || !name.startsWith(prefix)) continue;
+    const suffix = name.slice(prefix.length);
+    if (suffix.length > 0) keys.push(suffix.toLowerCase());
+  }
+  return keys;
+}
+
+/** Plan keys configured for `provider`, whether via the catalog or env vars. */
 export function listConfiguredPlanKeys(provider: PaymentProviderId): string[] {
   const keys = new Set<string>();
-  const mapped = catalogOverride?.[provider] ?? {};
-  for (const [k, v] of Object.entries(mapped)) {
+  for (const [k, v] of Object.entries(catalogOverride?.[provider] ?? {})) {
     if (v) keys.add(k);
   }
-  // Also discover from env for known keys in catalog across providers
-  for (const other of Object.values(catalogOverride ?? {})) {
-    for (const k of Object.keys(other ?? {})) keys.add(k);
-  }
+  for (const k of envPlanKeys(provider)) keys.add(k);
   return [...keys];
 }
 
@@ -75,13 +91,23 @@ export function resolvePlanKeyFromProviderPriceId(
   priceId: string | null | undefined,
 ): string | null {
   if (!priceId) return null;
-  const mapped = catalogOverride?.[provider] ?? {};
-  for (const [planKey, id] of Object.entries(mapped)) {
+
+  // Exact catalog match first — preserves the app's own key spelling.
+  for (const [planKey, id] of Object.entries(catalogOverride?.[provider] ?? {})) {
     if (id === priceId) return planKey;
   }
-  // env scan for configured catalog keys + common attempt via reverse env is limited;
-  // apps should prefer configurePriceCatalog.
-  for (const planKey of listConfiguredPlanKeys(provider)) {
+
+  // Then probe forward-resolution over every candidate key. Keys registered for
+  // other providers are included because a planKey is provider-agnostic: an app
+  // may name `pro` in the catalog for one PSP and via env for another. Catalog
+  // spellings are tried before normalized env-derived ones.
+  const candidates = new Set<string>();
+  for (const other of Object.values(catalogOverride ?? {})) {
+    for (const k of Object.keys(other ?? {})) candidates.add(k);
+  }
+  for (const k of envPlanKeys(provider)) candidates.add(k);
+
+  for (const planKey of candidates) {
     if (getProviderPriceId(provider, planKey) === priceId) return planKey;
   }
   return null;
