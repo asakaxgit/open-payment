@@ -76,7 +76,24 @@ export function verifyChargebeeWebhook(
 ): void {
   const username = process.env.CHARGEBEE_WEBHOOK_USERNAME;
   const password = process.env.CHARGEBEE_WEBHOOK_PASSWORD;
-  if (username && password) {
+  const hmacSecret = process.env.CHARGEBEE_WEBHOOK_HMAC_SECRET;
+
+  // Fail closed: a half-configured pair must never fall through unverified.
+  const hasBasicAuth = Boolean(username && password);
+  if ((username || password) && !hasBasicAuth) {
+    throw new PaymentProviderError(
+      'Set both CHARGEBEE_WEBHOOK_USERNAME and CHARGEBEE_WEBHOOK_PASSWORD',
+      'NOT_CONFIGURED',
+    );
+  }
+  if (!hasBasicAuth && !hmacSecret) {
+    throw new PaymentProviderError(
+      'Configure CHARGEBEE_WEBHOOK_USERNAME/PASSWORD or CHARGEBEE_WEBHOOK_HMAC_SECRET',
+      'NOT_CONFIGURED',
+    );
+  }
+
+  if (hasBasicAuth) {
     const auth = headerGet(headers, 'authorization');
     if (!auth?.startsWith('Basic ')) {
       throw new PaymentProviderError('Missing Chargebee basic auth', 'INVALID_WEBHOOK');
@@ -90,7 +107,6 @@ export function verifyChargebeeWebhook(
     }
   }
 
-  const hmacSecret = process.env.CHARGEBEE_WEBHOOK_HMAC_SECRET;
   if (hmacSecret) {
     const signature = headerGet(headers, 'chargebee-webhook-signature');
     if (!signature) {
@@ -103,13 +119,6 @@ export function verifyChargebeeWebhook(
     if (a.length !== b.length || !timingSafeEqual(a, b)) {
       throw new PaymentProviderError('Invalid Chargebee HMAC signature', 'INVALID_WEBHOOK');
     }
-  }
-
-  if (!username && !password && !hmacSecret) {
-    throw new PaymentProviderError(
-      'Configure CHARGEBEE_WEBHOOK_USERNAME/PASSWORD or CHARGEBEE_WEBHOOK_HMAC_SECRET',
-      'NOT_CONFIGURED',
-    );
   }
 }
 
