@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { assertFreshTimestamp, webhookToleranceSeconds } from '../webhook.js';
 import {
   checkoutCustomData,
   getProviderPriceId,
@@ -51,6 +52,7 @@ function headerGet(
 export function verifyPolarSignature(
   rawBody: string | Buffer,
   headers: Headers | Record<string, string | null | undefined>,
+  nowMs?: number,
 ): void {
   const secret = process.env.POLAR_WEBHOOK_SECRET;
   if (!secret) {
@@ -79,6 +81,13 @@ export function verifyPolarSignature(
   if (!ok) {
     throw new PaymentProviderError('Invalid Polar webhook signature', 'INVALID_WEBHOOK');
   }
+
+  assertFreshTimestamp({
+    provider: 'Polar',
+    timestamp,
+    toleranceSeconds: webhookToleranceSeconds('POLAR_WEBHOOK_TOLERANCE_SECONDS'),
+    nowMs,
+  });
 }
 
 export function polarPayloadToBillingEvents(payload: unknown): BillingEvent[] {

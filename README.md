@@ -51,7 +51,23 @@ STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 
 # Paddle / Lemon Squeezy / Polar / Chargebee — see adapters
+
+# Webhook replay tolerance in seconds (default 300, 0 disables the check)
+PADDLE_WEBHOOK_TOLERANCE_SECONDS=
+POLAR_WEBHOOK_TOLERANCE_SECONDS=
 ```
+
+## Webhook replay protection
+
+Signature verification proves a payload was signed with your secret, not that
+it was signed recently. Adapters whose PSP signs a timestamp reject deliveries
+outside a 300s tolerance window (Stripe enforces this internally; Paddle and
+Polar are checked by this package).
+
+**Lemon Squeezy is the exception:** its `X-Signature` is a bare HMAC of the
+request body with no timestamp, so a captured delivery stays valid
+indefinitely. If you use that adapter, deduplicate on the event id in your own
+handler — the library is stateless and cannot do it for you.
 
 Plan ↔ price IDs are configured via `configurePriceCatalog()` (preferred) or
 env vars of the form `{PROVIDER}_PRICE_{PLAN_KEY}` / provider-specific prefixes.

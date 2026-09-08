@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { assertFreshTimestamp, webhookToleranceSeconds } from '../webhook.js';
 import {
   checkoutCustomData,
   getProviderPriceId,
@@ -46,7 +47,11 @@ function headerGet(
   return record[name] ?? record[name.toLowerCase()] ?? null;
 }
 
-export function verifyPaddleSignature(rawBody: string | Buffer, signatureHeader: string): void {
+export function verifyPaddleSignature(
+  rawBody: string | Buffer,
+  signatureHeader: string,
+  nowMs?: number,
+): void {
   const secret = process.env.PADDLE_WEBHOOK_SECRET;
   if (!secret) {
     throw new PaymentProviderError('PADDLE_WEBHOOK_SECRET is not set', 'NOT_CONFIGURED');
@@ -67,6 +72,13 @@ export function verifyPaddleSignature(rawBody: string | Buffer, signatureHeader:
   if (a.length !== b.length || !timingSafeEqual(a, b)) {
     throw new PaymentProviderError('Invalid Paddle webhook signature', 'INVALID_WEBHOOK');
   }
+
+  assertFreshTimestamp({
+    provider: 'Paddle',
+    timestamp: parts.ts,
+    toleranceSeconds: webhookToleranceSeconds('PADDLE_WEBHOOK_TOLERANCE_SECONDS'),
+    nowMs,
+  });
 }
 
 export function paddlePayloadToBillingEvents(payload: unknown): BillingEvent[] {
