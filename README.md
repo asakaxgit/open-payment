@@ -1,4 +1,4 @@
-# open-payment
+# open-payment-adapter
 
 Provider-agnostic **SaaS billing** payment port with multi-PSP adapters.
 
