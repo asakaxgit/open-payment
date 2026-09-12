@@ -98,3 +98,27 @@ collapses non-alphanumerics — a plan key of `pro-plus` becomes
 ## License
 
 MIT
+
+## Testing / mocks
+
+```ts
+import {
+  createMockPaymentProvider,
+  PROVIDER_WEBHOOK_FIXTURES,
+} from 'open-payment-adapter/testing';
+import { setPaymentProviderOverride, getPaymentProvider } from 'open-payment-adapter';
+import { paddlePayloadToBillingEvents } from 'open-payment-adapter'; // or adapter path
+
+// 1) Inject a mock provider (no network)
+const mock = createMockPaymentProvider({ id: 'paddle' });
+setPaymentProviderOverride(mock);
+await getPaymentProvider().createCheckout({ /* ... */ });
+
+// 2) Assert PSP payload → BillingEvent mappers with fixtures
+for (const fixture of PROVIDER_WEBHOOK_FIXTURES) {
+  // map with the matching *PayloadToBillingEvents helper
+}
+```
+
+Fixtures cover Paddle, Lemon Squeezy, Polar, Chargebee (activated + canceled) plus a Stripe Checkout session object helper.
+
