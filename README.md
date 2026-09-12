@@ -9,7 +9,7 @@ a hexagonal `PaymentProvider` port and normalizes PSP webhooks into domain event
 ## Install
 
 ```bash
-npm install open-payment
+npm install open-payment-adapter
 # Stripe adapter peer (optional until you use stripe):
 npm install stripe
 ```
@@ -17,7 +17,7 @@ npm install stripe
 ## Quick start
 
 ```ts
-import { getPaymentProvider, configurePriceCatalog } from 'open-payment';
+import { getPaymentProvider, configurePriceCatalog } from 'open-payment-adapter';
 
 configurePriceCatalog({
   stripe: { pro: 'price_xxx', business: 'price_yyy' },
