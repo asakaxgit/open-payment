@@ -24,7 +24,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "prepublishOnly": "npm run build"
+    "prepack": "npm run build"
   },
   "keywords": [
     "payment",
@@ -62,5 +62,10 @@
     "vitest": "^3.2.4",
     "@types/node": "^22.13.10",
     "stripe": "^22.6.1"
-  }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "author": "asakaxgit"
 }

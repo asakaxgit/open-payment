@@ -1,0 +1,45 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Required for npm trusted publishing — lets the job mint an OIDC token.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+          registry-url: 'https://registry.npmjs.org'
+
+      # Trusted publishing needs npm >= 11.5.1; Node 22 still bundles npm 10.
+      - run: npm install -g npm@latest
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+      # Fail early if the tag and package.json version disagree, rather than
+      # publishing a version nobody expected.
+      - name: Check tag matches package version
+        if: github.event_name == 'release'
+        run: |
+          pkg="$(node -p 'require("./package.json").version')"
+          tag="${GITHUB_REF_NAME#v}"
+          if [ "$pkg" != "$tag" ]; then
+            echo "package.json is $pkg but the release tag is $tag" >&2
+            exit 1
+          fi
+
+      # No NPM_TOKEN: auth comes from OIDC via trusted publishing, which also
+      # generates provenance automatically. prepublishOnly runs the build.
+      - run: npm publish --access public
